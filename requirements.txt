@@ -1,0 +1,2 @@
+# No third-party Python packages are required by the current implementation.
+# External commands required for media tasks: ffmpeg, ffprobe.

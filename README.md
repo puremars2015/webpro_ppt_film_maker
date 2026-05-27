@@ -160,10 +160,21 @@ python app.py --task concat --input-dir merged --output final.mp4
 - 支援模板、場景、語音、影片、字幕、影音合成、影片串接
 - API Key 欄位預設讀取 `OPENAI_API_KEY_FOR_IMAGE` 與 `MINIMAX_API_KEY`
 - 模板與場景的參考圖片欄位支援一次選多張，或以每行一個路徑手動貼上
+- 語音聲線使用下拉選單選擇，不需手動輸入 voice ID
 - 檔案欄位提供瀏覽按鈕
 - 執行後會在下方顯示 stdout 與 stderr
 
 GUI 不直接實作 API 邏輯，所有任務都會轉成 `app.py` CLI 指令執行。
+
+## AI Skill 安裝
+
+本專案已整理成可安裝的 AI coding-agent skill：
+
+```text
+skills/webpro-ppt-film-maker/SKILL.md
+```
+
+安裝時請複製整個 `skills/webpro-ppt-film-maker` 資料夾。Claude Code 可放到 `~/.claude/skills/`，opencode 可放到 `.opencode/skills/` 或 `~/.config/opencode/skills/`，其他支援 `SKILL.md` 的 Codex-like / OpenClaw-style 工具可放到其 skills 目錄，或參考 `skills/README.md`。
 
 ## JSON 輸出
 

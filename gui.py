@@ -28,6 +28,32 @@ LEGACY_OPENAI_API_KEY_ENV = "OPENAI_API_KEY"
 IMAGE_SIZES = ["1024x1024", "1536x1024", "1024x1536", "auto"]
 VIDEO_RESOLUTIONS = ["512P", "720P", "768P", "1080P"]
 AUDIO_FORMATS = ["mp3", "wav", "opus", "flac", "pcm", "pcmu_raw", "pcmu_wav"]
+TTS_VOICE_OPTIONS = [
+    ("中文 - 新聞女聲", "Chinese (Mandarin)_News_Anchor"),
+    ("中文 - 播報男聲", "Chinese (Mandarin)_Male_Announcer"),
+    ("中文 - 甜美女聲", "Chinese (Mandarin)_Sweet_Lady"),
+    ("中文 - 溫潤男聲", "Chinese (Mandarin)_Gentleman"),
+    ("中文 - 抒情男聲", "Chinese (Mandarin)_Lyrical_Voice"),
+    ("中文 - 港普空姐", "Chinese (Mandarin)_HK_Flight_Attendant"),
+    ("中文 - 成熟女性音色", "female-chengshu"),
+    ("中文 - 甜美女性音色", "female-tianmei"),
+    ("中文 - 精英青年音色", "male-qn-jingying"),
+    ("中文 - 青澀青年音色", "male-qn-qingse"),
+    ("英文 - Graceful Lady", "English_Graceful_Lady"),
+    ("英文 - Trustworthy Man", "English_Trustworthy_Man"),
+    ("英文 - Aussie Bloke", "English_Aussie_Bloke"),
+    ("英文 - Whispering Girl", "English_Whispering_girl"),
+    ("英文 - Diligent Man", "English_Diligent_Man"),
+    ("英文 - Gentle-voiced Man", "English_Gentle-voiced_man"),
+]
+TTS_VOICE_LABELS = [f"{label} ({voice_id})" for label, voice_id in TTS_VOICE_OPTIONS]
+TTS_VOICE_IDS_BY_LABEL = {
+    voice_label: voice_id
+    for voice_label, (_, voice_id) in zip(TTS_VOICE_LABELS, TTS_VOICE_OPTIONS)
+}
+DEFAULT_TTS_VOICE_LABEL = next(
+    voice_label for voice_label, voice_id in TTS_VOICE_IDS_BY_LABEL.items() if voice_id == "English_Graceful_Lady"
+)
 
 
 def get_tk_install_hint() -> str:
@@ -70,7 +96,7 @@ class PptFilmMakerGui:
         self.scene_number_var = tk.StringVar()
 
         self.tts_model_var = tk.StringVar(value="speech-2.8-hd")
-        self.tts_voice_var = tk.StringVar(value="English_Graceful_Lady")
+        self.tts_voice_var = tk.StringVar(value=DEFAULT_TTS_VOICE_LABEL)
         self.tts_format_var = tk.StringVar(value="mp3")
         self.tts_speed_var = tk.StringVar(value="1.0")
         self.tts_pitch_var = tk.StringVar(value="0")
@@ -176,7 +202,7 @@ class PptFilmMakerGui:
         frame = self._new_tab("tts", "語音")
         self._add_path_row(frame, 0, "文稿檔", self.tts_text_file_var)
         self._add_labeled_entry(frame, 1, "模型", self.tts_model_var)
-        self._add_labeled_entry(frame, 2, "聲線", self.tts_voice_var)
+        self._add_labeled_combobox(frame, 2, "聲線", self.tts_voice_var, TTS_VOICE_LABELS, state="readonly")
         self._add_labeled_combobox(frame, 3, "音訊格式", self.tts_format_var, AUDIO_FORMATS)
         self._add_labeled_entry(frame, 4, "語速", self.tts_speed_var)
         self._add_labeled_entry(frame, 5, "音調", self.tts_pitch_var)
@@ -236,9 +262,17 @@ class PptFilmMakerGui:
         entry.grid(row=row, column=1, sticky="ew", pady=(6, 0))
         return entry
 
-    def _add_labeled_combobox(self, parent: ttk.Frame, row: int, label: str, variable: tk.StringVar, values: list[str]) -> ttk.Combobox:
+    def _add_labeled_combobox(
+        self,
+        parent: ttk.Frame,
+        row: int,
+        label: str,
+        variable: tk.StringVar,
+        values: list[str],
+        state: str = "normal",
+    ) -> ttk.Combobox:
         ttk.Label(parent, text=label).grid(row=row, column=0, sticky="w", pady=(6, 0))
-        combo = ttk.Combobox(parent, textvariable=variable, values=values, state="normal")
+        combo = ttk.Combobox(parent, textvariable=variable, values=values, state=state)
         combo.grid(row=row, column=1, sticky="ew", pady=(6, 0))
         return combo
 
@@ -356,12 +390,17 @@ class PptFilmMakerGui:
             return command
         if task == "tts":
             text = self.tts_text.get("1.0", tk.END).strip()
+            voice_label = self.tts_voice_var.get().strip()
+            voice_id = TTS_VOICE_IDS_BY_LABEL.get(voice_label)
             if not text and not self.tts_text_file_var.get().strip():
                 messagebox.showerror("缺少欄位", "請輸入文稿內容或選擇文稿檔。")
                 return None
+            if not voice_id:
+                messagebox.showerror("缺少欄位", "請從選單選擇聲線。")
+                return None
             command.extend([
                 "--model", self.tts_model_var.get().strip(),
-                "--voice", self.tts_voice_var.get().strip(),
+                "--voice", voice_id,
                 "--audio-format", self.tts_format_var.get().strip(),
                 "--speed", self.tts_speed_var.get().strip(),
                 "--pitch", self.tts_pitch_var.get().strip(),
